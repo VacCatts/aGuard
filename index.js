@@ -31,4 +31,4 @@ client.on('interactionCreate', async interaction => {
 	}
 });
 
-client.login(config.token);
+client.login(token.token);
