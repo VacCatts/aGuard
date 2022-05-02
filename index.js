@@ -1,33 +1,34 @@
-const Discord = require('v11-discord.js');
-require('dotenv').config();
+const fs = require('node:fs');
+const { Client, Collection, Intents } = require('discord.js');
+const { token } = require('./config.json');
 
-const bot = new Discord.Client({
-    disableEveryone: true,
-    sync: true,
-    messageCacheLifetime: 3600,
-    ws: {
-        compress: true        
-    }
-}); 
+const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 
-bot.on('ready', () => {
-    console.log(`Logged in as ${bot.user.tag}!`);
+client.commands = new Collection();
+const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+
+for (const file of commandFiles) {
+	const command = require(`./commands/${file}`);
+	client.commands.set(command.data.name, command);
+}
+
+client.once('ready', () => {
+	console.log('Ready!');
 });
 
-bot.on('message', async message => {
-    // If the message author is the bot, ignore it.
-    if(message.author.id === bot.user.id) return;
+client.on('interactionCreate', async interaction => {
+	if (!interaction.isCommand()) return;
 
-    if (message.content.startsWith(process.env.PREFIX)) {
-        // command handler    
-        let args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
-        let command = args.shift().toLowerCase();
-        try {
-            let commandFile = require(`./cmds/${command}.js`);
-            commandFile.run(bot, message, args);
-        } catch (e) {
-        }
-    }
+	const command = client.commands.get(interaction.commandName);
+
+	if (!command) return;
+
+	try {
+		await command.execute(interaction);
+	} catch (error) {
+		console.error(error);
+		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+	}
 });
 
-bot.login(process.env.TOKEN);
+client.login(token);
