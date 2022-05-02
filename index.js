@@ -21,7 +21,6 @@ bot.on('message', async message => {
     if (message.content.startsWith(process.env.PREFIX)) {
         // command handler    
         let args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
-        let args2 = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
         let command = args.shift().toLowerCase();
         try {
             let commandFile = require(`./cmds/${command}.js`);
